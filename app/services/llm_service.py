@@ -1,5 +1,5 @@
 from app.models.llm_response import LLMResponse
-from app.config.config import settings,Settings
+from app.config.config import Settings
 from app.api.schemas import Message
 from openai import AsyncOpenAI
 import time
@@ -18,33 +18,33 @@ class LLMService:
             ]
             start = time.perf_counter()
             selected_model = model or self.settings.DEFAULT_MODEL
-            response = await self.client.beta.chat.completions.parse(
+            response = await self.client.chat.completions.create(
                 model=selected_model,
                 messages = formatted_message,
-                response_format=LLMResponse,
                 temperature=temperature
             )
             end = time.perf_counter()
             latency = (end-start)*1000
-
-            result = response.choices[0].message.content
-            prompt_token = response.usage.prompt_tokens
-            completion_token = response.usage.completion_tokens
-            total_token = response.usage.total_tokens
-            finish_reason = response.choices[0].finish_reason
-
-
-            return LLMResponse(
-                content=result,
-                model=selected_model,
-                prompt_token=prompt_token,
-                completition_token=completion_token,
-                total_token=total_token,
-                finish_reason=finish_reason,
-                latency_ms=latency
-            )
+            return self._map_response(response,model=selected_model,latency=latency)
+            
         except Exception:
             raise
-    
+    def _map_response(self,response,model,latency) -> LLMResponse:
+        result = response.choices[0].message.content
+        prompt_tokens = response.usage.prompt_tokens
+        completion_tokens = response.usage.completion_tokens
+        total_tokens = response.usage.total_tokens
+        finish_reason = response.choices[0].finish_reason
+
+        return LLMResponse(
+            content=result,
+            model=model,
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=total_tokens,
+            finish_reason=finish_reason,
+            latency_ms=latency
+        )
+
     
 
