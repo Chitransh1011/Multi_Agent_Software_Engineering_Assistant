@@ -5,12 +5,15 @@ from app.api.schemas import Message
 from app.graph.state import AgentState
 from datetime import datetime
 from app.graph.execution import ExecutionStep,AgentStatus
+from pydantic import BaseModel
+
 
 class BaseAgent(ABC):
-    def __init__(self,llm_service :LLMService,model:str|None=None):
+    def __init__(self,llm_service :LLMService,model:str|None=None,response_model: type[BaseModel] | None = None):
         self.llm = llm_service
         self.model = model or llm_service.settings.DEFAULT_MODEL
         self.name = self.__class__.__name__
+        self.response_model: type[BaseModel] | None = response_model
 
     def _record_execution(
         self,
@@ -39,8 +42,8 @@ class BaseAgent(ABC):
 
             messages = self._build_prompt(state=state)
 
-            response = await self._call_llm(messages=messages)
-            state = self._update_state(state=state,response=response)
+            llm_result = await self._call_llm(messages=messages)
+            state = self._update_state(state=state,response=llm_result)
 
             ended_at = datetime.now()
             self._record_execution(state,started_at=started_at,ended_at=ended_at,status=AgentStatus.SUCCESS)
@@ -55,12 +58,8 @@ class BaseAgent(ABC):
         
 
 
-    async def _call_llm(self,messages: list[Message])->LLMResponse:
-        response = await self.llm.generate(messages=messages,model=self.model)
-        if response.finish_reason != "stop":
-            raise RuntimeError(
-                f"Unexpected finish reason: {response.finish_reason}"
-            )
+    async def _call_llm(self,messages: list[Message])-> BaseModel | LLMResponse:
+        response = await self.llm.generate(messages=messages,model=self.model,response_model=self.response_model)
         return response
 
     @abstractmethod
@@ -68,6 +67,6 @@ class BaseAgent(ABC):
         pass
 
     @abstractmethod
-    def _update_state(self,state:AgentState,response: LLMResponse)->AgentState:
+    def _update_state(self,state:AgentState,response)->AgentState:
         pass
 

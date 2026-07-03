@@ -3,28 +3,43 @@ from app.config.config import Settings
 from app.api.schemas import Message
 from openai import AsyncOpenAI
 import time
+from typing import TypeVar
+from pydantic import BaseModel
 
 
-
+T = TypeVar("T", bound=BaseModel)
 class LLMService:
     def __init__(self,settings:Settings):
         self.settings = settings
         self.client = AsyncOpenAI(api_key=settings.openai_api_key)
 
-    async def generate(self,messages:list[Message],model:str|None=None,temperature:float=0.2) -> LLMResponse:
+    async def generate(self,messages:list[Message],response_model:type[T]|None=None,model:str|None=None,temperature:float=0.2) -> T| LLMResponse:
         try:       
             formatted_message = [
                 message.model_dump() for message in messages
             ]
             start = time.perf_counter()
             selected_model = model or self.settings.DEFAULT_MODEL
-            response = await self.client.chat.completions.create(
-                model=selected_model,
-                messages = formatted_message,
-                temperature=temperature
-            )
+            if response_model is None:
+                response = await self.client.chat.completions.create(
+                    model=selected_model,
+                    messages = formatted_message,
+                    temperature=temperature
+                )
+            else:
+                response = await self.client.beta.chat.completions.parse(
+                    model=selected_model,
+                    messages = formatted_message,
+                    temperature=temperature,
+                    response_format=response_model
+                )
+            if response.choices[0].finish_reason!="stop":
+                raise RuntimeError("Problem has occured")
             end = time.perf_counter()
             latency = (end-start)*1000
+            if response_model is not None:
+                return response.output_parsed
+            
             return self._map_response(response,model=selected_model,latency=latency)
             
         except Exception:
