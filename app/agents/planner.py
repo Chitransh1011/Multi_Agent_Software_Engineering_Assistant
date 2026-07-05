@@ -9,7 +9,7 @@ class PlannerAgent(BaseAgent):
         super().__init__(llm_service=llm_service,model=model,response_model=Plan)
       
 
-    def _build_prompt(self, state)-> list[Message]:
+    def _build_prompt(self, state,task:str|None=None)-> list[Message]:
         
         system_message = Message(role="system",content=PLANNER_SYSTEM_PROMPT)
         user_message = Message(role="user",content=state.user_query)
@@ -17,7 +17,7 @@ class PlannerAgent(BaseAgent):
             system_message,
             user_message
         ]
-    def _update_state(self, state, response)-> AgentState:
+    def _update_state(self, state, response,task:str|None=None)-> AgentState:
         state.plan = response
         state.current_step_index = 0
         return state

@@ -35,15 +35,15 @@ class BaseAgent(ABC):
             status=status
         ))
         
-    async def run(self,state:AgentState)->AgentState:
+    async def run(self,state:AgentState, task:str|None=None)->AgentState:
         try:
             state.current_agent = self.name
             started_at = datetime.now()
 
-            messages = self._build_prompt(state=state)
+            messages = self._build_prompt(state=state,task=task)
 
             llm_result = await self._call_llm(messages=messages)
-            state = self._update_state(state=state,response=llm_result)
+            state = self._update_state(state=state,response=llm_result,task=task)
 
             ended_at = datetime.now()
             self._record_execution(state,started_at=started_at,ended_at=ended_at,status=AgentStatus.SUCCESS)
@@ -53,6 +53,8 @@ class BaseAgent(ABC):
         except Exception as e:
             ended_at = datetime.now()
             self._record_execution(state,started_at=started_at,ended_at=ended_at,status=AgentStatus.FAILED,error_message=str(e))
+            state.current_agent = None
+            state.updated_at = ended_at
             raise
 
         
@@ -63,10 +65,10 @@ class BaseAgent(ABC):
         return response
 
     @abstractmethod
-    def _build_prompt(self,state:AgentState)->list[Message]:
+    def _build_prompt(self,state:AgentState,task:str|None=None)->list[Message]:
         pass
 
     @abstractmethod
-    def _update_state(self,state:AgentState,response)->AgentState:
+    def _update_state(self,state:AgentState,response,task:str|None=None)->AgentState:
         pass
 

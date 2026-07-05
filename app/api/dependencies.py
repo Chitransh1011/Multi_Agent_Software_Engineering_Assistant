@@ -2,11 +2,19 @@ from app.services.llm_service import LLMService
 from app.config.config import settings
 from app.graph.graph import GraphService
 from app.agents.planner import PlannerAgent
-
+from app.agents.coding import CodingAgent
+from app.agents.review import ReviewAgent
+from app.agents.writer import WriterAgent
 
 llm_service = LLMService(settings=settings)
+
 planner_agent = PlannerAgent(llm_service=llm_service)
-graph_service = GraphService(planner=planner_agent)
+coding = CodingAgent(llm_service)
+review = ReviewAgent(llm_service)
+writer = WriterAgent(llm_service)
+
+graph_service = GraphService(planner=planner_agent,coding=coding,review=review,writer=writer)
+
 
 
 def get_llm_service():
