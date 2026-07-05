@@ -38,7 +38,7 @@ class LLMService:
             end = time.perf_counter()
             latency = (end-start)*1000
             if response_model is not None:
-                return response.output_parsed
+                return response.choices[0].message.parsed
             
             return self._map_response(response,model=selected_model,latency=latency)
             

@@ -14,7 +14,7 @@ class PlanStep(BaseModel):
 
 class Plan(BaseModel):
     needs_research: bool
-    response: list[PlanStep]
+    steps : list[PlanStep]
     reason:str
 
 

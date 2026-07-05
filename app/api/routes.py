@@ -1,18 +1,14 @@
-from app.services.llm_service import LLMService
 from fastapi import Depends,APIRouter
-from app.api.dependencies import get_llm_service
-from app.models.llm_response import LLMResponse
+from app.api.dependencies import get_graph_service
 from app.api.schemas import GenerateRequest
+from app.graph.graph import GraphService
+from app.graph.state import AgentState
 
 router = APIRouter()
 
-@router.post("/generate",response_model=LLMResponse)
-async def generate(request : GenerateRequest,llm:LLMService = Depends(get_llm_service)):
+@router.post("/generate",response_model=AgentState)
+async def generate(request : GenerateRequest,graph:GraphService = Depends(get_graph_service)):
 
 
-    response = await llm.generate(
-        messages=request.messages,
-        model=request.model,
-        temperature=request.temperature
-    )
-    return response
+    state = await graph.execute(request.user_query)
+    return state

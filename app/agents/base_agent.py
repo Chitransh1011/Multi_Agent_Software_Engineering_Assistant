@@ -47,8 +47,8 @@ class BaseAgent(ABC):
 
             ended_at = datetime.now()
             self._record_execution(state,started_at=started_at,ended_at=ended_at,status=AgentStatus.SUCCESS)
-            
-
+            state.current_agent = None
+            state.updated_at = ended_at
             return state
         except Exception as e:
             ended_at = datetime.now()

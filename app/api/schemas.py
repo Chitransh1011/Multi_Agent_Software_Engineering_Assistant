@@ -5,6 +5,4 @@ class Message(BaseModel):
     content: str
 
 class GenerateRequest(BaseModel):
-    messages : list[Message]
-    model : str | None = None
-    temperature : float = 0.2
+    user_query:str

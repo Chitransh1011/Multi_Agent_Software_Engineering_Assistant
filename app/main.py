@@ -1,6 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
-from .api import routes
+from app.api import routes
 app = FastAPI(title="Multi_Agent_Software_Engineering_Assistant")
 
 app.include_router(routes.router,prefix="/api/v1",tags=["LLM"])
