@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     AURA_INSTANCENAME:str
 
     DEFAULT_MODEL : str = "gpt-4o-mini"
+    MAX_RETRIES : int = 3
 
     model_config = SettingsConfigDict(env_file=".env",extra="ignore")
 

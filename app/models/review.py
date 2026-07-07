@@ -2,7 +2,7 @@ from pydantic import BaseModel,Field
 from app.graph.state import AgentType
 class ReviewResult(BaseModel):
     passed:bool
-    confidence: float
+    confidence: float = Field(ge=0.0, le=1.0)
     feedback: str
     issues: list[str]=Field(default_factory=list)
     next_action: AgentType

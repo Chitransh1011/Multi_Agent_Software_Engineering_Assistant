@@ -14,13 +14,49 @@ class CodingAgent(BaseAgent):
             role="system",
             content=CODING_SYSTEM_PROMPT
         )
+        review_feedback = (
+            state.review_result.feedback
+            if state.review_result
+            else "No review feedback available."
+        )
+
+        issues = (
+            "\n".join(state.review_result.issues)
+            if state.review_result
+            else "No issues reported."
+        )
+        artifacts = ""
+        for artifact in state.generated_artifacts:
+            artifacts += f"""
+                Filename : 
+                {artifact.filename}
+
+                Type : 
+                {artifact.artifact_type}
+
+                Content :
+                {artifact.content}
+
+                -----------------------
+            """
         user_content = f"""
             Original user query : 
             {state.user_query}
+
             Task is : 
             {task}
+
             Retrieved Context : 
             {state.retrieved_context or "No additional context available."}
+
+            REVIEW FEEDBACK:
+            {review_feedback}
+
+            ISSUES:
+            {issues}
+            
+            Current Project Files : 
+            {artifacts}
         """
         user_message = Message(
             role="user",
@@ -32,7 +68,7 @@ class CodingAgent(BaseAgent):
         
     def _update_state(self, state, response, task = None):
         
-        state.generated_artifacts.append(
+        state.upsert_artifact(
             Generated_Artifact(
                 artifact_type="python",
                 task=task,

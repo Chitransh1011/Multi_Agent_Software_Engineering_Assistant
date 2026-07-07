@@ -26,4 +26,28 @@ class AgentState(BaseModel):
     updated_at: datetime
     current_step_index: int
 
+    def get_artifact(
+    self,
+    filename: str,
+    ) -> Generated_Artifact | None:
+        for artifact in self.generated_artifacts:
+            if artifact.filename == filename:
+                return artifact
+        return None
+
+
+    def upsert_artifact(
+        self,
+        artifact: Generated_Artifact,
+    ) -> None:
+        for existing in self.generated_artifacts:
+            if existing.filename == artifact.filename:
+                existing.content = artifact.content
+                existing.task = artifact.task
+                existing.artifact_type = artifact.artifact_type
+                return
+
+        self.generated_artifacts.append(artifact)
+
+
 

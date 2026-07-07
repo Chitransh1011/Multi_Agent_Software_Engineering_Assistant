@@ -38,6 +38,11 @@ class ReviewAgent(BaseAgent):
 
             Review Task : 
             {task}
+            Previous review:
+            {state.review_result.feedback}
+
+            Retry attempt:
+            {state.retry_attempts}
 
         """
         user_message = Message(
