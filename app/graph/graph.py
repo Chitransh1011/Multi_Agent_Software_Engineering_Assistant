@@ -8,11 +8,13 @@ from app.agents.writer import WriterAgent
 from app.agents.base_agent import BaseAgent
 from app.models.plan import Plan
 from app.models.execution_plan import ExecutionPlan
+from app.agents.research import ResearchAgent
 class GraphService:
-    def __init__(self,planner:PlannerAgent,coding:CodingAgent,review:ReviewAgent,writer:WriterAgent):
+    def __init__(self,planner:PlannerAgent,research:ResearchAgent,coding:CodingAgent,review:ReviewAgent,writer:WriterAgent):
         self.planner = planner
         self.writer = writer
         self.agents:dict[AgentType,BaseAgent] = {
+            AgentType.RESEARCH:research,
             AgentType.CODING:coding,
             AgentType.REVIEW:review,
         }
@@ -32,6 +34,7 @@ class GraphService:
         state = await self.planner.run(state=state)
         if state.plan is None:
             raise RuntimeError("Planner did not return a plan")
+        
         return state
     
     async def _run_agent(self,state:AgentState,agent_type:AgentType,task:str|None=None)->AgentState:
@@ -83,6 +86,9 @@ class GraphService:
 
         state = self._create_initial_state(user_query)
         state = await self._run_planner(state=state)
+        if state.plan.needs_research:
+            state = await self._run_agent(state=state,agent_type=AgentType.RESEARCH)
+
         execution_plan = self._extract_execution_plan(state.plan)
         state = await self._run_coding_steps(state, execution_plan.coding_steps)
         state = await self._run_review_loop(state, execution_plan.review_step)

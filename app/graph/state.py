@@ -8,7 +8,7 @@ from app.models.generated_artifcats import Generated_Artifact
 from app.models.plan import Plan
 from app.models.review import ReviewResult
 from app.models.writer import WriterResult
-
+from app.models.research import ResearchResult
 class AgentState(BaseModel):
     user_query: str
     messages: list[Message] = Field(default_factory=list)
@@ -16,7 +16,7 @@ class AgentState(BaseModel):
     current_agent: AgentType | None=None
     metadata: dict[str,Any] = Field(default_factory=dict)
     plan: Plan | None = None
-    retrieved_context: str | None = None
+    research_result: ResearchResult | None = None
     generated_artifacts: list[Generated_Artifact] = Field(default_factory=list)
     review_result: ReviewResult | None = None
     final_response: WriterResult | None = None

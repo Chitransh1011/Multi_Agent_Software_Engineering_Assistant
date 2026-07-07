@@ -25,6 +25,11 @@ class CodingAgent(BaseAgent):
             if state.review_result
             else "No issues reported."
         )
+        research_summary = (
+            state.research_result.summary
+            if state.research_result
+            else "No research available"
+        )
         artifacts = ""
         for artifact in state.generated_artifacts:
             artifacts += f"""
@@ -47,7 +52,7 @@ class CodingAgent(BaseAgent):
             {task}
 
             Retrieved Context : 
-            {state.retrieved_context or "No additional context available."}
+            {research_summary}
 
             REVIEW FEEDBACK:
             {review_feedback}
