@@ -9,6 +9,10 @@ from app.agents.base_agent import BaseAgent
 from app.models.plan import Plan
 from app.models.execution_plan import ExecutionPlan
 from app.agents.research import ResearchAgent
+
+import logging
+
+logger = logging.getLogger(__name__)
 class GraphService:
     def __init__(self,planner:PlannerAgent,research:ResearchAgent,coding:CodingAgent,review:ReviewAgent,writer:WriterAgent):
         self.planner = planner
@@ -42,7 +46,9 @@ class GraphService:
     
     async def _run_coding_steps(self,state,coding_steps)->AgentState:
         for step in coding_steps:
+            logger.info("Running coding task: %s",step.task)
             state = await self._run_agent(state,AgentType.CODING, task=step.task)
+
         return state
 
     async def _run_review_loop(self,state,review_step)->AgentState:
@@ -50,10 +56,11 @@ class GraphService:
             state = await self._run_agent(state,AgentType.REVIEW, task=review_step.task)
             if state.review_result.passed:
                 break
-
+            logger.warning( "Retry task: %s",state.review_result.retry_task)
             state.retry_attempts += 1
 
             if state.retry_attempts >= settings.MAX_RETRIES:
+                logger.exception("Maximum retry count exceeded.")
                 raise RuntimeError(f"Maximum retries ({settings.MAX_RETRIES}) reached.")
 
             state = await self._run_agent(
@@ -83,15 +90,25 @@ class GraphService:
         return ExecutionPlan(coding_steps=coding_steps,review_step=review_step)
 
     async def execute(self,user_query:str) -> AgentState :
-
+        logger.info("Workflow execution started.")
         state = self._create_initial_state(user_query)
+        logger.info("Planner started.")
         state = await self._run_planner(state=state)
+        logger.info("Planner completed.")
+
         if state.plan.needs_research:
+            logger.info("ResearchAgent started.")
             state = await self._run_agent(state=state,agent_type=AgentType.RESEARCH)
+            logger.info("ResearchAgent completed.")
 
         execution_plan = self._extract_execution_plan(state.plan)
         state = await self._run_coding_steps(state, execution_plan.coding_steps)
         state = await self._run_review_loop(state, execution_plan.review_step)
+
+        logger.info("WriterAgent started.")
         state = await self._run_writer(state)
+        logger.info("WriterAgent completed.")
+        logger.info("Workflow completed successfully.")
         return state
+        
 

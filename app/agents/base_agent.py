@@ -6,7 +6,9 @@ from app.graph.state import AgentState
 from datetime import datetime
 from app.graph.execution import ExecutionStep,AgentStatus
 from pydantic import BaseModel
+import logging
 
+logger = logging.getLogger(__name__)
 
 class BaseAgent(ABC):
     def __init__(self,llm_service :LLMService,model:str|None=None,response_model: type[BaseModel] | None = None):
@@ -42,7 +44,10 @@ class BaseAgent(ABC):
 
             messages = self._build_prompt(state=state,task=task)
 
+            logger.info("%s started.", self.name)
             llm_result = await self._call_llm(messages=messages)
+            logger.info("%s completed successfully.", self.name)
+
             state = self._update_state(state=state,response=llm_result,task=task)
 
             ended_at = datetime.now()
@@ -51,6 +56,7 @@ class BaseAgent(ABC):
             state.updated_at = ended_at
             return state
         except Exception as e:
+            logger.exception("%s failed.", self.name)
             ended_at = datetime.now()
             self._record_execution(state,started_at=started_at,ended_at=ended_at,status=AgentStatus.FAILED,error_message=str(e))
             state.current_agent = None
