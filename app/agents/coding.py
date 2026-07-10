@@ -4,6 +4,7 @@ from app.api.schemas import Message
 from app.models.coding import CodingResult
 from app.prompts.coding import CODING_SYSTEM_PROMPT
 from app.models.generated_artifcats import Generated_Artifact
+from app.utils.logging import logger
 class CodingAgent(BaseAgent):
 
     def __init__(self, llm_service:LLMService, model:str="gpt-4o-mini"):
@@ -75,14 +76,17 @@ class CodingAgent(BaseAgent):
         
         state.upsert_artifact(
             Generated_Artifact(
-                artifact_type="python",
+                artifact_type=response.artifact_type,
                 task=task,
                 content=response.content,
                 filename=response.filename
             )
         )
-        print(len(state.generated_artifacts))
-        for artifact in state.generated_artifacts:
-            print(artifact.filename)
+        logger.info(
+            "Generated artifact: %s",
+            response.filename,
+        )
+            
         
+        state.review_result = None
         return state

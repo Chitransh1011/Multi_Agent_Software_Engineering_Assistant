@@ -8,9 +8,14 @@ from app.agents.writer import WriterAgent
 from app.rag.retriever import get_retriever
 from app.services.knowledge_service import KnowledgeService
 from app.agents.research import ResearchAgent
+from app.graph.langgraph_builder import LangGraphBuilder
+from app.graph.langgraph_service import LangGraphService
 
 llm_service = LLMService(settings=settings)
-retriever = get_retriever()
+
+retriever = get_retriever(settings.RAG_DOCUMENT_PATH)
+
+
 knowledge_service = KnowledgeService(retriever=retriever)
 planner_agent = PlannerAgent(llm_service=llm_service)
 research = ResearchAgent(llm_service=llm_service,knowledge_service=knowledge_service)
@@ -20,7 +25,8 @@ writer = WriterAgent(llm_service)
 
 
 
-graph_service = GraphService(planner=planner_agent,research=research,coding=coding,review=review,writer=writer)
+builder = LangGraphBuilder(planner=planner_agent,research=research,coding=coding,review=review,writer=writer)
+graph_service = LangGraphService(builder=builder)
 
 
 

@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     DEFAULT_MODEL : str = "gpt-4o-mini"
     MAX_RETRIES : int = 3
+    RAG_DOCUMENT_PATH : str = "data/git_docs.pdf"
 
     model_config = SettingsConfigDict(env_file=".env",extra="ignore")
 
