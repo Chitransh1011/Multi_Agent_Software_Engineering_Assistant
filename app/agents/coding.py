@@ -77,7 +77,7 @@ class CodingAgent(BaseAgent):
         state.upsert_artifact(
             Generated_Artifact(
                 artifact_type=response.artifact_type,
-                task=task,
+                description=task,
                 content=response.content,
                 filename=response.filename
             )

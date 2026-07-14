@@ -1,5 +1,5 @@
 from pydantic import BaseModel,Field
-from app.graph.state import AgentType
+from app.models.plan import AgentType
 class ReviewResult(BaseModel):
     passed:bool
     confidence: float = Field(ge=0.0, le=1.0)

@@ -10,7 +10,6 @@ router = APIRouter()
 @router.post("/generate",response_model=AgentState)
 async def generate(request : GenerateRequest,graph:LangGraphService = Depends(get_graph_service)):
 
-    logger.info("Received request: %s", request.user_query)
+    
     state = await graph.execute(request.user_query)
-    logger.info("Request completed successfully")
     return state

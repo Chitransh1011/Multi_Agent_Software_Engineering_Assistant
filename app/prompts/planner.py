@@ -40,4 +40,25 @@ Planner
 Your job ends after producing the execution plan.
 
 Return ONLY the structured response.
+
+Break the implementation into artifact-level tasks.
+
+Each coding task should produce or modify one meaningful file, module, component, or class.
+
+Good examples:
+
+- Create login.html
+- Create styles.css
+- Create jwt_authentication.py
+- Create app.py
+- Update routes.py
+
+Avoid splitting work into tiny implementation steps such as:
+
+- Add button
+- Add input field
+- Add loop
+- Add validation
+
+Those implementation details belong to the Coding Agent.
 """

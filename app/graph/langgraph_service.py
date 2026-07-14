@@ -14,6 +14,7 @@ class LangGraphService:
         return AgentState(
             user_query=user_query,
             messages=[],
+            workflow_started_at=now,
             created_at=now,
             updated_at=now,
             current_step_index=0,
@@ -24,6 +25,6 @@ class LangGraphService:
 
         state = self._create_initial_state(user_query)
 
-        state = await self.graph.ainvoke(state)
+        result = await self.graph.ainvoke(state)
 
-        return state
+        return AgentState.model_validate(result)

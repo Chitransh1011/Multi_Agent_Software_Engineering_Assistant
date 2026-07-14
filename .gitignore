@@ -121,3 +121,5 @@ venv.bak/
 .DS_Store
 
 notes.md
+generated/
+vector_store/

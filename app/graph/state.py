@@ -9,7 +9,12 @@ from app.models.plan import Plan,PlanStep
 from app.models.review import ReviewResult
 from app.models.writer import WriterResult
 from app.models.research import ResearchResult
+from uuid import uuid4
 class AgentState(BaseModel):
+    request_id: str = Field(
+        default_factory=lambda: str(uuid4())
+    )
+    workflow_started_at: datetime | None = None
     user_query: str
     messages: list[Message] = Field(default_factory=list)
     execution_history: list[ExecutionStep] = Field(default_factory=list)
@@ -39,6 +44,11 @@ class AgentState(BaseModel):
     def coding_step_count(self) -> int:
         return len(self.get_coding_steps())
     
+    def is_retry(self) -> bool:
+        return (
+            self.review_result is not None
+            and not self.review_result.passed
+        )
     def get_current_task(self) -> str | None:
         coding_steps = self.get_coding_steps()
 
@@ -64,7 +74,7 @@ class AgentState(BaseModel):
         for existing in self.generated_artifacts:
             if existing.filename == artifact.filename:
                 existing.content = artifact.content
-                existing.task = artifact.task
+                existing.description = artifact.description
                 existing.artifact_type = artifact.artifact_type
                 return
 

@@ -4,9 +4,14 @@ from app.agents.review import ReviewAgent
 from app.agents.writer import WriterAgent
 from app.agents.research import ResearchAgent
 from langgraph.graph import StateGraph, START, END
-from app.graph.state import AgentState,AgentType
+from app.graph.state import AgentState
 from app.config.config import settings
 from app.utils.logging import logger
+from app.services.artifact_service import ArtifactService
+from time import perf_counter
+from datetime import datetime
+
+
 
 PLANNER_NODE = "planner"
 RESEARCH_NODE = "research"
@@ -17,6 +22,7 @@ END_NODE = "end"
 class LangGraphBuilder:
 
     def __init__(self,planner:PlannerAgent,research:ResearchAgent,coding:CodingAgent,review:ReviewAgent,writer:WriterAgent):
+        self.artifact_service = ArtifactService()
         self.builder = StateGraph(AgentState)
         self.planner = planner
         self.research = research
@@ -26,16 +32,28 @@ class LangGraphBuilder:
     
     async def planner_node(self,state:AgentState)->AgentState:
         logger.info("Planner started")
+        start = perf_counter()
         state = await self.planner.run(state=state)
-        logger.info("Planner ended")
+        elapsed = perf_counter() - start
+        logger.info(
+            "[%s] Planner completed in %.2fs",
+            state.request_id,
+            elapsed,
+        )
 
         return state
 
     
     async def research_node(self,state:AgentState)->AgentState:
         logger.info("Research started")
+        start = perf_counter()
         state = await self.research.run(state=state)
-        logger.info("Research ended")
+        elapsed = perf_counter() - start
+        logger.info(
+            "[%s] Research completed in %.2fs",
+            state.request_id,
+            elapsed,
+        )
 
         return state
     
@@ -51,10 +69,12 @@ class LangGraphBuilder:
         else:
             task = state.get_current_task()
 
-        print(state.plan.model_dump())
+        logger.info("Execution plan: %s",state.plan.model_dump())
         logger.info("Coding started")
+        start = perf_counter()
         logger.info(
-            "Coding task (%s/%s): %s",
+            "[%s] Coding (%d/%d): %s",
+            state.request_id,
             state.current_step_index + 1,
             state.coding_step_count(),
             task,
@@ -63,7 +83,12 @@ class LangGraphBuilder:
             state=state,
             task=task,
         )
-        logger.info("Coding ended")
+        elapsed = perf_counter() - start
+        logger.info(
+            "[%s] Coding completed in %.2fs",
+            state.request_id,
+            elapsed,
+        )
         if not is_retry:
             state.current_step_index += 1
 
@@ -71,8 +96,15 @@ class LangGraphBuilder:
     
     async def review_node(self,state:AgentState)->AgentState:
         logger.info("Review started")
+        start = perf_counter()
         state = await self.review.run(state=state)
-        logger.info("Review ended")
+
+        elapsed = perf_counter() - start
+        logger.info(
+            "[%s] Review completed in %.2fs",
+            state.request_id,
+            elapsed,
+        )
         logger.info(
         "Review completed. Passed=%s Confidence=%.2f",
             state.review_result.passed,
@@ -83,8 +115,36 @@ class LangGraphBuilder:
     
     async def writer_node(self,state:AgentState)->AgentState:
         logger.info("Writer started")
+        start = perf_counter()
         state = await self.writer.run(state=state)
+        elapsed = perf_counter() - start
+        total_time = (
+             datetime.now() - state.workflow_started_at
+        ).total_seconds()
+        logger.info(
+            "[%s] Writer completed in %.2fs",
+            state.request_id,
+            elapsed,
+            
+        )
+        logger.info(
+            "[%s] Workflow completed in %.2fs",
+            state.request_id,
+            total_time,
+        )
+
+        logger.info(
+            "[%s] Total artifacts: %d",
+            state.request_id,
+            len(state.generated_artifacts),
+        )
+        logger.info(state.final_response.summary)
         logger.info("Writer ended")
+        try:
+            self.artifact_service.save(state.generated_artifacts)
+            logger.info("Artifacts saved successfully.")
+        except Exception:
+            logger.exception("Failed to save artifacts.")
         return state
     
     def route_after_planner(self,state:AgentState)->str:
@@ -103,6 +163,7 @@ class LangGraphBuilder:
         
         state.retry_attempts += 1
         if state.retry_attempts >= settings.MAX_RETRIES:
+            logger.warning("Retry %d/%d failed",state.retry_attempts,settings.MAX_RETRIES)
             return WRITER_NODE
         
         logger.info("Routing: Review -> Coding (Retry)")
@@ -110,10 +171,7 @@ class LangGraphBuilder:
     
     def route_after_coding(self,state: AgentState) -> str:
 
-        if (
-        state.review_result
-        and not state.review_result.passed
-        ):
+        if state.is_retry():
             logger.info("Routing: Coding -> Review")
             return REVIEW_NODE
 
