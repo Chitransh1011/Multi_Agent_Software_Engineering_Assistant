@@ -1,11 +1,13 @@
 import uvicorn
 from fastapi import FastAPI
 from app.api import routes
-from app.utils.logging import logger
+
 
 app = FastAPI(title="Multi_Agent_Software_Engineering_Assistant")
-logger.info("Application started")
+
 app.include_router(routes.router,prefix="/api/v1",tags=["LLM"])
+
+
 
 @app.get("/health")
 def health_check():

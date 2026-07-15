@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     NEO4J_DATABASE:str
     AURA_INSTANCEID:str
     AURA_INSTANCENAME:str
-
+    DATABASE_URL:str
     DEFAULT_MODEL : str = "gpt-4o-mini"
     MAX_RETRIES : int = 3
     RAG_DOCUMENT_PATH : str = "data/git_docs.pdf"
