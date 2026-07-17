@@ -33,10 +33,6 @@ class Artifact(Base):
         nullable=False,
     )
 
-    task: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-    )
 
     description: Mapped[str | None] = mapped_column(
         Text,

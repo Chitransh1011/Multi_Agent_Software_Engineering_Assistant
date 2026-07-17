@@ -37,3 +37,8 @@ class Message(Base):
         DateTime(timezone=True),
         server_default=func.now(),
     )
+
+    agent_name: Mapped[str] = mapped_column(
+        String(30),
+        nullable=False,
+    )

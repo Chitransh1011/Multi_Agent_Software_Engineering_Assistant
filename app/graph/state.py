@@ -10,6 +10,7 @@ from app.models.review import ReviewResult
 from app.models.writer import WriterResult
 from app.models.research import ResearchResult
 from uuid import uuid4,UUID
+from app.models.agent_message import AgentMessage
 class AgentState(BaseModel):
     request_id: str = Field(
         default_factory=lambda: str(uuid4())
@@ -31,6 +32,7 @@ class AgentState(BaseModel):
     updated_at: datetime
     current_step_index: int
     conversation_id : UUID | None = None
+    agent_messages: list[AgentMessage] = Field(default_factory=list)
 
     def get_coding_steps(self)->list[PlanStep]:
         if self.plan is None:

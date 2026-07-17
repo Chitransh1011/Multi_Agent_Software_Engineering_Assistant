@@ -34,6 +34,10 @@ class LangGraphBuilder:
         logger.info("Planner started")
         start = perf_counter()
         state = await self.planner.run(state=state)
+        logger.info(
+            "Planner node history length = %d",
+            len(state.execution_history),
+        )
         elapsed = perf_counter() - start
         logger.info(
             "[%s] Planner completed in %.2fs",
@@ -85,6 +89,10 @@ class LangGraphBuilder:
         )
         elapsed = perf_counter() - start
         logger.info(
+            "Coding node history length = %d",
+            len(state.execution_history),
+        )
+        logger.info(
             "[%s] Coding completed in %.2fs",
             state.request_id,
             elapsed,
@@ -106,6 +114,10 @@ class LangGraphBuilder:
             elapsed,
         )
         logger.info(
+            "Review node history length = %d",
+            len(state.execution_history),
+        )
+        logger.info(
         "Review completed. Passed=%s Confidence=%.2f",
             state.review_result.passed,
             state.review_result.confidence,
@@ -121,6 +133,11 @@ class LangGraphBuilder:
         total_time = (
              datetime.now() - state.workflow_started_at
         ).total_seconds()
+
+        logger.info(
+            "Writer node history length = %d",
+            len(state.execution_history),
+        )
         logger.info(
             "[%s] Writer completed in %.2fs",
             state.request_id,

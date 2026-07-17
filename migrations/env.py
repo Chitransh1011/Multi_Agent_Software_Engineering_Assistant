@@ -4,6 +4,13 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from app.db.base import Base
 from app.config.config import settings
+import app.db.models.conversation
+import app.db.models.artifact
+import app.db.models.message
+import app.db.models.execution_history
+
+
+
 
 
 from alembic import context

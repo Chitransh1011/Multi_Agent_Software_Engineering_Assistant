@@ -7,6 +7,7 @@ from datetime import datetime
 from app.graph.execution import ExecutionStep,AgentStatus
 from pydantic import BaseModel
 import logging
+from app.models.agent_message import AgentMessage
 
 logger = logging.getLogger(__name__)
 
@@ -44,9 +45,33 @@ class BaseAgent(ABC):
 
             messages = self._build_prompt(state=state,task=task)
 
+            for message in messages:
+                state.agent_messages.append(
+                    AgentMessage(
+                        agent_name=self.name,
+                        role=message.role,
+                        content=message.content,
+                    )
+                )
+            logger.info("%s started.", self.name)
+
             logger.info("%s started.", self.name)
             llm_result = await self._call_llm(messages=messages)
             logger.info("%s completed successfully.", self.name)
+
+            content = (
+                llm_result.model_dump_json()
+                if isinstance(llm_result, BaseModel)
+                else str(llm_result)
+            )
+
+            state.agent_messages.append(
+                AgentMessage(
+                    agent_name=self.name,
+                    role="assistant",
+                    content=content,
+                )
+            )
 
             state = self._update_state(state=state,response=llm_result,task=task)
 
