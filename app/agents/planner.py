@@ -1,6 +1,6 @@
 from .base_agent import BaseAgent
 from app.prompts.planner import PLANNER_SYSTEM_PROMPT
-from app.api.schemas import Message
+from app.api.llm_schemas import Message
 from app.models.plan import Plan
 from app.services.llm_service import LLMService
 from app.graph.state import AgentState

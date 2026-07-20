@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from app.services.llm_service import LLMService
 from app.models.llm_response import LLMResponse
-from app.api.schemas import Message
+from app.api.llm_schemas import Message
 from app.graph.state import AgentState
 from datetime import datetime
 from app.graph.execution import ExecutionStep,AgentStatus

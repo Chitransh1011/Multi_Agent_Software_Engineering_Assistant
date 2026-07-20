@@ -1,6 +1,6 @@
 from pydantic import BaseModel,Field
 from .execution import ExecutionStep
-from app.api.schemas import Message
+from app.api.llm_schemas import Message
 from typing import Any
 from datetime import datetime
 from app.models.plan import AgentType

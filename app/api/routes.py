@@ -1,6 +1,6 @@
 from fastapi import Depends,APIRouter
 from app.api.dependencies import get_graph_service
-from app.api.schemas import GenerateRequest
+from app.api.llm_schemas import GenerateRequest
 from app.graph.langgraph_service import LangGraphService
 from app.graph.state import AgentState
 from app.utils.logging import logger

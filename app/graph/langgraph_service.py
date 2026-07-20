@@ -34,39 +34,35 @@ class LangGraphService:
             "[%s] Creating conversation",
             state.request_id,
         )
-        conversation = self.uow.conversations.create(
+        conversation = self.uow.conversations.add(
             Conversation(
                 request_id = state.request_id,
                 user_query = user_query,
                 status = ConversationStatus.RUNNING
             )
         )
-        logger.info(
-            "[%s] Conversation %s created",
-            state.request_id,
-            conversation.id,
-        )
+        self.uow.flush()
         state.conversation_id = conversation.id
         
         try:
             result = await self.graph.ainvoke(state)
             state = AgentState.model_validate(result)
             
-            conversation.status = ConversationStatus.COMPLETED
+            
             logger.info(
                 "[%s] Persisting %d execution steps",
                 state.request_id,
                 len(state.execution_history),
             )
             for step in state.execution_history:
-                self.uow.execution.create(
+                self.uow.execution.add(
                     ExecutionHistory(
                         conversation_id = state.conversation_id,
                         agent_name = step.agent_name,
                         started_at = step.started_at,
                         ended_at = step.ended_at,
                         latency_ms = step.latency_ms,
-                        status = step.status,
+                        status = step.status.value,
                     )
                 )
             logger.info(
@@ -80,7 +76,7 @@ class LangGraphService:
             )
 
             for artifact in state.generated_artifacts:
-                self.uow.artifacts.create(
+                self.uow.artifacts.add(
                     Artifact(
                         conversation_id=state.conversation_id,
                         filename=artifact.filename,
@@ -101,7 +97,7 @@ class LangGraphService:
             )
 
             for message in state.agent_messages:
-                self.uow.messages.create(
+                self.uow.messages.add(
                     Message(
                         conversation_id=state.conversation_id,
                         role=message.role,
@@ -110,22 +106,23 @@ class LangGraphService:
                     )
                 )
             logger.info(
-                "Agent messages collected: %d",
-                len(state.agent_messages),
-            )
-            logger.info(
                 "[%s] Messages persisted",
                 state.request_id,
             )            
             logger.info(
-            "Final execution history length = %d",
-            len(state.execution_history),
-        )
+                "Final execution history length = %d",
+                len(state.execution_history),
+            )
+
+            conversation.status = ConversationStatus.COMPLETED
+            conversation.updated_at = datetime.now()
+            self.uow.commit()
+            self.uow.refresh(conversation)
+            
         except Exception:
             conversation.status = ConversationStatus.FAILED  
+            self.uow.rollback()
             raise
-        finally:
-            conversation.updated_at = datetime.now()
-            self.uow.conversations.update(conversation)
-
+            
+        
         return state

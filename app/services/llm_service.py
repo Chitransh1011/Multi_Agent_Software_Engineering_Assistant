@@ -1,6 +1,6 @@
 from app.models.llm_response import LLMResponse
 from app.config.config import Settings
-from app.api.schemas import Message
+from app.api.llm_schemas import Message
 from openai import AsyncOpenAI
 import time
 from typing import TypeVar

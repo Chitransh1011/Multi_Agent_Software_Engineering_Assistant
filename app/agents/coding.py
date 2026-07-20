@@ -1,6 +1,6 @@
 from app.agents.base_agent import BaseAgent
 from app.services.llm_service import LLMService
-from app.api.schemas import Message
+from app.api.llm_schemas import Message
 from app.models.coding import CodingResult
 from app.prompts.coding import CODING_SYSTEM_PROMPT
 from app.models.generated_artifcats import Generated_Artifact

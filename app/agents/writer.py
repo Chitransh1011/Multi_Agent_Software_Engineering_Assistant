@@ -2,7 +2,7 @@ from app.agents.base_agent import BaseAgent
 from app.models.writer import WriterResult
 from app.services.llm_service import LLMService
 from app.prompts.writer import WRITER_SYSTEM_PROMPT
-from app.api.schemas import Message
+from app.api.llm_schemas import Message
 from app.graph.state import AgentState
 class WriterAgent(BaseAgent):
     def __init__(self, llm_service:LLMService, model = "gpt-4o-mini"):

@@ -1,17 +1,15 @@
 from sqlalchemy.orm import Session
 from app.db.models.artifact import Artifact
 from uuid import UUID
+from sqlalchemy import select,func
 class ArtifactRepository:
 
     def __init__(self,db:Session):
         self.db = db
 
-    def create(self,artifact:Artifact)->Artifact:
+    def add(self,artifact:Artifact)->Artifact:
 
         self.db.add(artifact)
-        self.db.commit()
-        self.db.refresh(artifact)
-
         return artifact
     
     def get(self,artifact_id:UUID)->Artifact|None:
@@ -19,10 +17,27 @@ class ArtifactRepository:
             self.db.query(Artifact).filter(Artifact.id == artifact_id).first()
         )
 
-    def update(self,artifact:Artifact):
-        self.db.commit()
-        self.db.refresh(artifact)
-
     def delete(self,artifact:Artifact):
         self.db.delete(artifact)
-        self.db.commit()
+
+    def list_by_conversation(
+        self,
+        conversation_id: UUID,
+    ) -> list[Artifact]:
+        return (
+            self.db.execute(
+                select(Artifact)
+                .where(
+                    Artifact.conversation_id == conversation_id
+                )
+            )
+            .scalars()
+            .all()
+        )
+    
+    def count(self) -> int:
+        return self.db.scalar(
+            select(func.count(Artifact.id))
+        ) or 0
+    
+    
