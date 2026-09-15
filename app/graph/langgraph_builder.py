@@ -107,6 +107,9 @@ class LangGraphBuilder:
         start = perf_counter()
         state = await self.review.run(state=state)
 
+        if not state.review_result.passed:
+            state.retry_attempts += 1
+
         elapsed = perf_counter() - start
         logger.info(
             "[%s] Review completed in %.2fs",
@@ -178,7 +181,6 @@ class LangGraphBuilder:
         if state.review_result.passed:
             return WRITER_NODE
         
-        state.retry_attempts += 1
         if state.retry_attempts >= settings.MAX_RETRIES:
             logger.warning("Retry %d/%d failed",state.retry_attempts,settings.MAX_RETRIES)
             return WRITER_NODE

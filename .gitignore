@@ -64,6 +64,7 @@ docker-compose.override.yml
 generated/
 notes.md
 vector_store/
+chroma_store/
 
 # Frontend build dependencies
 frontend/node_modules/

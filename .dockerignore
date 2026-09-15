@@ -13,6 +13,12 @@ __pycache__/
 # Environment files
 .env
 .env.docker
+.env.*
+!.env.example
+
+# Local vector databases (created at runtime)
+vector_store/
+chroma_store/
 
 # Python caches
 .pytest_cache/

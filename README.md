@@ -26,7 +26,7 @@ flowchart LR
     Review -->|Retry when needed| Coding
     Review -->|Approved or retry limit reached| Writer[Writer]
     Writer --> DB[(PostgreSQL)]
-    Graph --> RAG[FAISS retrieval]
+    Graph --> RAG[Chroma retrieval]
     RAG --> Docs[Local knowledge base]
 ```
 
@@ -36,7 +36,7 @@ flowchart LR
 | --- | --- |
 | Backend | Python 3.12, FastAPI, Pydantic, Uvicorn |
 | Agent orchestration | LangGraph, LangChain, OpenAI API |
-| Retrieval | FAISS, document loading and chunking pipeline |
+| Retrieval | Chroma, LangChain, OpenAI embeddings, PDF loading and chunking |
 | Persistence | PostgreSQL, SQLAlchemy, Alembic |
 | Frontend | React 18, Vite 6, Tailwind CSS 4, Axios |
 | Delivery | Docker and Docker Compose |
@@ -68,6 +68,7 @@ frontend/
 migrations/        Alembic database migrations
 tests/             Unit and API tests
 data/              Source documents for retrieval
+chroma_store/      Local Chroma database (generated and Git-ignored)
 ```
 
 ## Getting started
@@ -88,6 +89,8 @@ Copy-Item .env.example .env
 ```
 
 Update `.env` with a valid `OPENAI_API_KEY` and the correct `DATABASE_URL` for your PostgreSQL instance.
+
+Set `RAG_DOCUMENT_PATH` to the PDF to ingest (default: `data/git_docs.pdf`). Relative document paths are resolved from the working directory; run the backend from the repository root.
 
 ### 2. Start the backend locally
 
@@ -132,6 +135,23 @@ docker compose up --build
 ```
 
 Run the frontend separately using the commands in the previous section.
+
+Chroma runs inside the backend process; no separate Chroma server is required. Compose persists its database in the `chroma_data` volume mounted at `/app/chroma_store`. Local vector databases are excluded from the Docker build context. For Docker, `RAG_DOCUMENT_PATH` must point to a PDF available inside the container, such as `data/git_docs.pdf`.
+
+## Retrieval with Chroma
+
+- At backend initialization, `app/rag/ingestion.py` opens the `engineering_knowledge` collection. If it contains any documents, ingestion reuses it.
+- For an empty collection, the configured PDF is loaded, split into chunks, embedded with OpenAI `text-embedding-3-small`, and stored in Chroma. This first ingestion requires OpenAI access and incurs embedding usage.
+- Local runs persist the database in `chroma_store/` at the repository root. Chroma saves additions automatically and reopens the collection on subsequent starts.
+- The research flow retrieves up to three matching chunks through the existing LangChain retriever. Query embedding still requires OpenAI access.
+
+### Migrating or rebuilding
+
+The old FAISS `vector_store/` files are not imported. After installing the updated requirements, the first start with an empty Chroma collection rebuilds from the configured PDF. Both database directories are Git-ignored.
+
+Changing `RAG_DOCUMENT_PATH`, editing a PDF, or adding more PDFs to `data/` does not update an existing collection. The current loader ingests only the single configured PDF. To rebuild locally, stop the backend, move `chroma_store/` to a backup location outside the repository, and restart. For Docker, stop the backend and back up/reset only its Chroma volume before restarting; keep the PostgreSQL volume intact.
+
+Ingestion currently runs during backend initialization. Use a single backend process for the first ingestion; interrupted or concurrent ingestion needs a dedicated ingestion workflow before production use.
 
 ## API overview
 
